@@ -20,11 +20,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # add radio buttons in group
         self.radiobutton_group = [
-            self.ui.radioButton_extramural,
             self.ui.radioButton_daytime,
-            self.ui.radioButton_daytime1,
+            self.ui.radioButton_extramural,
+            self.ui.radioButton_extramural1,
             self.ui.radioButton_remotely,
-            self.ui.radioButton_extramural1]
+            self.ui.radioButton_daytime1]
 
         # set pandas table as widget
         self.pandas_model = DataFrameModel()
@@ -32,8 +32,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # dialog box
         self.__db_not_exist_message_box = MessageBox()
-        # error message
-        self.err_msg = QtWidgets.QErrorMessage()
+        # message box
+        self.__msg_box = QtWidgets.QMessageBox(self)
 
         # init mongoDB manager
         self.__init_mongo_manager(config_path)
@@ -42,6 +42,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.pushButton.clicked.connect(self.add_educational_program)
         self.ui.pushButton_2.clicked.connect(self.find_educational_program)
 
+
+    def __reset_all_add_fields(self):
+        # uncheck radio buttons
+        for button in self.radiobutton_group:
+            button.setCheckable(False)
+            button.setCheckable(True)
+
+        # clear add line edits
+        self.ui.lineEdit_specialty.clear()
+        self.ui.lineEdit_set_year.clear()
+        self.ui.lineEdit_qualification.clear()
+        self.ui.lineEdit_training_period.clear()
+        self.ui.lineEdit_registration_number.clear()
 
 
     def add_educational_program(self):
@@ -71,9 +84,12 @@ class MainWindow(QtWidgets.QMainWindow):
         # add document if fields is completeness, else show error message
         if is_completeness:
             self.__mongo_manager.add_document(doc)
-        else:
-            self.err_msg.showMessage("Не заполненно одно из полей.")
+            self.__reset_all_add_fields()
+            # show msg box
+            self.__show_add_document_msgbox()
 
+        else:
+            self.__show_empty_field_msgbox()
 
 
     def find_educational_program(self):
@@ -94,11 +110,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if is_completeness:
             result = self.__mongo_manager.find(query)
         else:
-            self.err_msg.showMessage("Не заполненно одно из полей.")
-
+            self.__show_empty_field_msgbox()
 
         # place data in table
-        if result is not None:
+        if type(result) == pd.DataFrame:
             # rename columns and set in table
             result = result.rename(columns={
                 "Специальность": "speciality",
@@ -110,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
             })
             self.pandas_model.setDataFrame(result)
         elif result == 'Not found':
-            self.err_msg.showMessage("Учебные планы не найдены.")
+            self.__show_not_found_msgbox()
 
 
     def __init_mongo_manager(self, config_path: str):
@@ -126,7 +141,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.__mongo_manager.create_database_and_collection()
 
 
+    def __show_add_document_msgbox(self):
+        self.__msg_box.setWindowTitle('Добавление учебной записи')
+        self.__msg_box.setText("Добавлен учебный план.")
+        self.__msg_box.show()
 
+    def __show_empty_field_msgbox(self):
+        self.__msg_box.setWindowTitle('Пустое поле')
+        self.__msg_box.setText("Не заполнено одно из полей.")
+        self.__msg_box.show()
+
+    def __show_not_found_msgbox(self):
+        self.__msg_box.setWindowTitle('Не найдено')
+        self.__msg_box.setText("Искомый документ не найден.")
+        self.__msg_box.show()
 
 
 

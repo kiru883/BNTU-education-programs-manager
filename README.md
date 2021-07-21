@@ -2,6 +2,7 @@
 ## How use?
 ### 1. Install
 ```
+>> git clone https://github.com/kiru883/BNTU-education-programs-manager.git
 >> pip install -r requirements.txt
 ```
 ### 2. Set up the config.ini
